@@ -9,6 +9,10 @@ const app = express();
 const kafka = new Kafka({
   clientId: 'api',
   brokers: ['localhost:9092'],
+  retry: {
+    initialRetryTime: 100,
+    retries: 8
+  }
 });
 
 const producer = kafka.producer({ createPartitioner: Partitioners.LegacyPartitioner });
