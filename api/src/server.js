@@ -2,8 +2,10 @@ import express from 'express';
 import { Kafka, logLevel } from 'kafkajs';
 import routes from './routes'
 import { Partitioners } from 'kafkajs';
+const { connectToDb, getDb } = require("./db");
 
 const app = express();
+app.use(express.json());
 
 // faz conexão com o kafka
 const kafka = new Kafka({
@@ -26,9 +28,21 @@ app.use((req, res, next) => {
   return next();
 });
 
-
 // cadastra as rotas
 app.use(routes);
+
+
+let db;
+
+connectToDb((err) => {
+  if (!err) {
+    app.listen(3000, () => {
+      console.log("App listening on port 3000");
+    })
+    db = getDb();
+  }
+})
+
 async function run() {
   await producer.connect();
   await consumer.connect();
@@ -40,10 +54,6 @@ async function run() {
       console.log(String(message.value))
     }
   });
-
-  app.listen(3000, () => {
-    console.log('Server is running on port 3000');
-  });
-};
+}
 
 run().catch(console.error);

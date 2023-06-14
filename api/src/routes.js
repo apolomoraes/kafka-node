@@ -1,17 +1,24 @@
 import { Router } from 'express';
 import { CompressionTypes } from 'kafkajs'
+import { connectToDb, getDb } from './db';
+const { ObjectId } = require("mongodb");
 
 const routes = Router();
+let db;
 
 routes.post('/certifications', async (req, res) => {
   //chamar microservice
-  // const { name, course, duration } = req.body
+  const certificate = req.body
+  
+  db = getDb();
+  const information = await db.collection('certifications').insertOne(certificate)
+
+  const certificationInformation = await db.collection('certifications').findOne({ _id: new ObjectId(information.insertedId) })
 
   const message = JSON.stringify({
-    user: { id: 1, name: "Apolo" },
-    course: 'kafka with NodeJS',
-    duration: '1 year',
-    grade: 5
+    user: certificationInformation.name,
+    course: certificationInformation.course,
+    duration: certificationInformation.duration
   })
 
   await req.producer.send({
@@ -22,7 +29,7 @@ routes.post('/certifications', async (req, res) => {
     ]
   });
 
-  return res.json({ ok: "certificate generated successfully" });
+  res.status(201).json()
 });
 
 export default routes;

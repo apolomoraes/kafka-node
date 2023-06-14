@@ -1,5 +1,7 @@
 // receber mensagens do kafka
 import { Kafka } from 'kafkajs';
+import { Partitioners } from 'kafkajs';
+
 
 const kafka = new Kafka({
   brokers: ['localhost:9092'],
@@ -9,7 +11,7 @@ const kafka = new Kafka({
 const topic = 'issue-certificate'
 const consumer = kafka.consumer({ groupId: 'certificate-group' })
 
-const producer = kafka.producer();
+const producer = kafka.producer({ createPartitioner: Partitioners.LegacyPartitioner });
 
 async function run() {
   await consumer.connect()
@@ -20,12 +22,12 @@ async function run() {
       const prefix = `${topic}[${partition} | ${message.offset}] / ${message.timestamp}`
       console.log(`- ${prefix} ${message.key}#${message.value}`)
 
+      await producer.connect();
       const payload = JSON.parse(message.value);
-
       producer.send({
         topic: 'certification-response',
         messages: [
-          { value: `Certificado do usuário ${payload.user.name} do curso ${payload.course} gerado!` },
+          { value: `Certificado do usuário ${payload.user} do curso ${payload.course} gerado, com duração de ${payload.duration}!` }
         ]
       });
     },
